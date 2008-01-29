@@ -9,8 +9,8 @@
 
 //wizRemote config
 
-//$GLOBALS["wiz_ip"] = "localhost";
-$GLOBALS["wiz_ip"] = "192.168.1.102";
+$GLOBALS["wiz_ip"] = "localhost";
+//$GLOBALS["wiz_ip"] = "192.168.1.102";
 $GLOBALS["wiz_port"] = "30464";
 
 $GLOBALS["timeout"] = "60";
@@ -208,7 +208,8 @@ function parse_start($s)
 
 function parse_duration($d)
 {
- $d = trim($d);
+ $d = str_replace(" ", "", $d);
+ $d = str_replace(":", "h", $d);
 
  if(preg_match("/^[0-9]+h[0-9]*$/i", $d) == 1)
  {
@@ -224,7 +225,7 @@ function parse_duration($d)
 //FIXME we need more validation on input data.
 if($_SERVER["REQUEST_METHOD"] == "POST")
 {
- $fname = str_replace(":", " ", $_REQUEST["fname"]);
+ $fname = trim(str_replace(":", " ", $_REQUEST["fname"]));
 
  $startdate = gmmktime(0,0,0,$_REQUEST["startMonth"],$_REQUEST["startDay"],$_REQUEST["startYear"]);
 
@@ -272,6 +273,9 @@ if($_SERVER["REQUEST_METHOD"] == "POST")
 
 ?>
 <html>
+<head>
+<script language="javascript" src="validation.js">
+</head>
 <body>
 <h1>WizRemote</h1>
 This is a sample application for setting timers remotely on your Beyonwiz PVR!<p>
@@ -283,7 +287,7 @@ Created by: <b>Eric Fry</b>
 render_timers();
 ?>
 <h3>New Timer</h3>
-<form method="POST">
+<form method="POST" onSubmit="return check_timer();">
 <table bgcolor="#dfdfdf">
 <tr><td align="right">Name:</td><td><input type="text" name="fname" id="fname" size="35"></td></tr>
 <tr><td align="right">Channel:</td><td><?php echo render_channel_dropdown(); ?></td></tr>

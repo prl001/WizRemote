@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		07364AC90D4F549100B2087A /* validation.js in Sources */ = {isa = PBXBuildFile; fileRef = 07364AC80D4F549100B2087A /* validation.js */; };
 		07B3A2000D4F2C1300D272D2 /* ezxml.c in Sources */ = {isa = PBXBuildFile; fileRef = 07B3A1FE0D4F2C1300D272D2 /* ezxml.c */; };
 		07B3A2040D4F2C2400D272D2 /* wizremote.c in Sources */ = {isa = PBXBuildFile; fileRef = 07B3A2030D4F2C2400D272D2 /* wizremote.c */; };
 /* End PBXBuildFile section */
@@ -24,6 +25,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		07364AC80D4F549100B2087A /* validation.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; name = validation.js; path = ../../web/validation.js; sourceTree = SOURCE_ROOT; };
 		07B3A1FE0D4F2C1300D272D2 /* ezxml.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ezxml.c; path = ../ezxml.c; sourceTree = SOURCE_ROOT; };
 		07B3A1FF0D4F2C1300D272D2 /* ezxml.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ezxml.h; path = ../ezxml.h; sourceTree = SOURCE_ROOT; };
 		07B3A2030D4F2C2400D272D2 /* wizremote.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = wizremote.c; path = ../wizremote.c; sourceTree = SOURCE_ROOT; };
@@ -45,6 +47,7 @@
 		07B3A2140D4F2D1600D272D2 /* Web */ = {
 			isa = PBXGroup;
 			children = (
+				07364AC80D4F549100B2087A /* validation.js */,
 				07B3A2170D4F2D2D00D272D2 /* wizremote.php */,
 			);
 			name = Web;
@@ -131,6 +134,7 @@
 			files = (
 				07B3A2000D4F2C1300D272D2 /* ezxml.c in Sources */,
 				07B3A2040D4F2C2400D272D2 /* wizremote.c in Sources */,
+				07364AC90D4F549100B2087A /* validation.js in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
