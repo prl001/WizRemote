@@ -1,2 +1,10 @@
-0.2 Added some javascript input form validation to wizremote.php
-0.1 Initial release
+0.3 * Fixed some memory leaks in wizremote
+    * Added the ability to delete timers
+    * Added the ability for the daemon to process mulitiple commands
+      in a single connection
+    * Added a 'Save and Reboot' button to the website. Don't 
+      automatically reboot when adding new timers.
+
+0.2 * Added some javascript input form validation to wizremote.php
+
+0.1 * Initial release

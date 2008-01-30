@@ -9,8 +9,8 @@
 
 //wizRemote config
 
-$GLOBALS["wiz_ip"] = "localhost";
-//$GLOBALS["wiz_ip"] = "192.168.1.102";
+//$GLOBALS["wiz_ip"] = "localhost";
+$GLOBALS["wiz_ip"] = "192.168.1.102";
 $GLOBALS["wiz_port"] = "30464";
 
 $GLOBALS["timeout"] = "60";
