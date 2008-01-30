@@ -98,15 +98,15 @@ function render_timers()
  if($count > 0)
  {
 	echo "<table border=1 cellspacing=0 cellpadding=2><tr><th>Filename</th><th>Start Date</th><th>Next Start Time</th>";
-	echo "<th>Start Time</th><th>Recording Duration</th><th>Occurrence</th><th>Play</th><th>Lock</th><th>Channel</th></tr>";
+	echo "<th>Start Time</th><th>Recording Duration</th><th>Occurrence</th><th>Play</th><th>Lock</th><th>Channel</th><th>Action</th></tr>";
 	for($i=0;$i<$count;$i++)
 	{
 		$line = fgets($wiz);
 		list($fname,$startmjd,$nextmjd,$start,$duration,$repeat,$play,$lock,
 			$onid,$tsid,$svcid) = split(":",trim($line));
-		$startmjd = decode_mjd($startmjd);
-		$nextmjd = decode_mjd($nextmjd);
-		$start = date("g:ia",mktime(0,0,$start));
+		$startdate = decode_mjd($startmjd);
+		$nextdate = decode_mjd($nextmjd);
+		$starttime = date("g:ia",mktime(0,0,$start));
 
 		$h = floor($duration / 3600);
 		$m = floor(($duration % 3600) / 60); 
@@ -124,11 +124,17 @@ function render_timers()
 		if(isset($GLOBALS["channels"][$channel]))
 			$channel = $GLOBALS["channels"][$channel];
 
-		echo "<tr><td>$fname</td><td>".date("d-M-Y",$startmjd)."</td><td>".date("d-M-Y",$nextmjd)."</td>";
-		echo "<td>$start</td><td>$duration</td><td>$repeat</td><td>$play</td><td>$lock</td><td>$channel</td></tr>";
+		echo "<tr><td>$fname</td><td>".date("d-M-Y",$startdate)."</td><td>".date("d-M-Y",$nextdate)."</td>";
+		echo "<td>$starttime</td><td>$duration</td><td>$repeat</td><td>$play</td><td>$lock</td><td>$channel</td>";
+		echo "<td align=\"center\"><a href=\"?cmd=edit&data=$startmjd,$start,$onid,$tsid,$svcid\"><img border=0 src=\"images/icon_edit_on.gif\"></a>";
+		echo "&nbsp;/&nbsp;";
+		echo "<a href=\"?cmd=delete&data=$startmjd,$start,$onid,$tsid,$svcid\" onClick=\"return confirm_delete('$fname')\"><img border=0 src=\"images/icon_delete_on.gif\"></a></td></tr>\n";
 	}
 	echo "</table>";
  }
+ else
+	echo "No Timers!";
+
  wiz_close($wiz);
 }
 
@@ -222,53 +228,105 @@ function parse_duration($d)
  return $d;
 }
 
+function add_timer()
+{
+	$fname = trim(str_replace(":", " ", $_REQUEST["fname"]));
+
+	$startdate = gmmktime(0,0,0,$_REQUEST["startMonth"],$_REQUEST["startDay"],$_REQUEST["startYear"]);
+
+	$occurrence = $_REQUEST["occurrence"];
+	if($occurrence < 0 || $occurrence > 4)
+		$occurrence = 0;
+
+	$startmjd = encode_mjd($startdate);
+	$nextmjd = $startmjd;
+ 
+	$start = parse_start($_REQUEST["start"]);
+	$duration = parse_duration($_REQUEST["duration"]);
+
+	$channel = $_REQUEST["channel"];
+	if(preg_match("/^[0-9]+,[0-9]+,[0-9]+$/",$channel) == 0)
+	{
+		$channel = "";
+		echo "Error";
+	}
+ 
+	$channel = str_replace(",", ":", $channel);
+ 
+	$wiz = wiz_connect();
+	if($wiz !== FALSE)
+	{
+		$addstr = "add\n$fname:$startmjd:$nextmjd:$start:$duration:$occurrence:0:0:$channel\n";
+		//echo "<pre>$addstr</pre>";
+		fwrite($wiz, $addstr);
+		fclose($wiz);
+	}
+
+}
+function save_and_reboot()
+{
+	$wiz = wiz_connect();
+	if($wiz !== FALSE)
+	{
+		$addstr = "reboot\n";
+		fwrite($wiz, $addstr);
+		fclose($wiz);
+	}
+
+	?>
+<html>
+<head>
+	<meta http-equiv=refresh content="25;url=<?php echo $_SERVER["SCRIPT_NAME"] ?>">
+</head>
+<body>
+	<h2>Rebooting Unit.</h2>
+	<table border=0><tr><td><img src="images/loading.gif"></td><td><b>Please Wait....</b></td></tr></table>
+</body>
+</html>
+	<?php
+	exit();
+}
+
+function edit_timer($data)
+{
+}
+
+function delete_timer($data)
+{
+	$timer = str_replace(",",":",$data);
+	if(!preg_match("/^([0-9]+:){4}[0-9]+$/",$timer))
+	{
+		echo "Invalid timer data!";
+		return;
+	}
+
+	$wiz = wiz_connect();
+	if($wiz !== FALSE)
+	{
+		$cmd = "delete\n$timer\n";
+		fwrite($wiz, $cmd);
+		fclose($wiz);
+	}
+	header("Location: ?");
+	exit();
+}
+
+if(isset($_REQUEST["cmd"]))
+{
+	$data = isset($_REQUEST["data"]) ? $_REQUEST["data"] : "";
+	
+	switch($_REQUEST["cmd"])
+	{
+		case "edit"   : edit_timer($data); break;
+		case "delete" : delete_timer($data); break;
+		case "reboot" : save_and_reboot(); break;
+	}
+}
+
 //FIXME we need more validation on input data.
 if($_SERVER["REQUEST_METHOD"] == "POST")
 {
- $fname = trim(str_replace(":", " ", $_REQUEST["fname"]));
-
- $startdate = gmmktime(0,0,0,$_REQUEST["startMonth"],$_REQUEST["startDay"],$_REQUEST["startYear"]);
-
- $occurrence = $_REQUEST["occurrence"];
- if($occurrence < 0 || $occurrence > 4)
-	$occurrence = 0;
-
- $startmjd = encode_mjd($startdate);
- $nextmjd = $startmjd;
- 
- $start = parse_start($_REQUEST["start"]);
- $duration = parse_duration($_REQUEST["duration"]);
-
- $channel = $_REQUEST["channel"];
- if(preg_match("/^[0-9]+,[0-9]+,[0-9]+$/",$channel) == 0)
- {
-	$channel = "";
-	echo "Error";
- }
- 
- $channel = str_replace(",", ":", $channel);
- 
- $wiz = wiz_connect();
- if($wiz !== FALSE)
- {
-	$addstr = "add\n$fname:$startmjd:$nextmjd:$start:$duration:$occurrence:0:0:$channel\n";
-	//echo "<pre>$addstr</pre>";
-	fwrite($wiz, $addstr);
-	fclose($wiz);
-	?>
-	<html>
-	<head>
-	<meta http-equiv=refresh content=25>
-	</head>
-	<body>
-	<h2>Rebooting Unit.</h2>
-	<table border=0><tr><td><img src="loading.gif"></td><td><b>Please Wait....</b></td></tr></table>
-	</body>
-	</html>
-	<?php
-	exit();
- }
-  
+	add_timer();
 }
 
 ?>
@@ -305,7 +363,10 @@ render_timers();
 <tr><td colspan="2">&nbsp;</td></tr>
 <tr><td colspan="2"><input type="submit" name="addTimer" id="addTimer" value="  Add Timer  "></td></tr>
 </table>
-
+<br>
+<br>
+<hr noshade size=1 width="100%">
+<input type="button" value="  Save and Reboot  " onClick="window.location='?cmd=reboot'">
 </form>
 </body>
 </html>

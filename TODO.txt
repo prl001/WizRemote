@@ -1,0 +1,15 @@
+TODO List
+
+* Client/daemon authentication (AES handshake token)
+* Website user authentication
+* Input checking for duplicate/overlapping timers.
+* Delete timer
+* Edit timer
+* Allow multiple timer edits before save/reboot.
+* Display the current beyonwiz time on website.
+* Add more robust network handling.
+* General code cleanup. More error handling.
+
+If you have any other suggestions please let me know. :)
+efry@users.sourceforge.net
+

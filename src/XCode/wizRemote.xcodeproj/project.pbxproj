@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		07364AC90D4F549100B2087A /* validation.js in Sources */ = {isa = PBXBuildFile; fileRef = 07364AC80D4F549100B2087A /* validation.js */; };
 		07B3A2000D4F2C1300D272D2 /* ezxml.c in Sources */ = {isa = PBXBuildFile; fileRef = 07B3A1FE0D4F2C1300D272D2 /* ezxml.c */; };
 		07B3A2040D4F2C2400D272D2 /* wizremote.c in Sources */ = {isa = PBXBuildFile; fileRef = 07B3A2030D4F2C2400D272D2 /* wizremote.c */; };
 /* End PBXBuildFile section */
@@ -134,7 +133,6 @@
 			files = (
 				07B3A2000D4F2C1300D272D2 /* ezxml.c in Sources */,
 				07B3A2040D4F2C2400D272D2 /* wizremote.c in Sources */,
-				07364AC90D4F549100B2087A /* validation.js in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

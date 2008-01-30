@@ -14,10 +14,15 @@
 
 #define debug(x) printf(x)
 #define MAX_LINE 512
+#define WIZREMOTE_PORT 30464
 #define BOOK_PATH "/tmp/config/book.xml"
 
-const char book_xml_header[] = "<?xml version=\"1.0\" encoding=\"iso-8859-1\" standalone=\"yes\" ?>\n<BeyonWiz>\n    <!-- Timer list for BeyonWiz -->\n    <TimerList version=\"5\">\n";
-const char book_xml_footer[] = "    </TimerList>\n</BeyonWiz>\n";
+const char book_xml_header[] = "<?xml version=\"1.0\" encoding=\"iso-8859-1\" standalone=\"yes\" ?>\n<BeyonWiz>\n    <!-- Timer list for BeyonWiz -->\n";
+const char book_xml_timerlist_start[] = "    <TimerList version=\"5\">\n";
+const char book_xml_timerlist_empty[] = "    <TimerList version=\"5\" />\n";
+const char book_xml_timerlist_end[]   = "    </TimerList>\n";
+
+const char book_xml_footer[] = "</BeyonWiz>\n";
 
 typedef struct {
 	char *filename;
@@ -45,6 +50,7 @@ void cmd_list(int socket);
 void cmd_add(int socket);
 void cmd_del(int socket);
 void cmd_shutdown(int socket);
+void cmd_reboot(int socket);
 void cmd_quit(int socket);
 
 typedef struct {
@@ -58,6 +64,7 @@ const CmdHandler cmdHandlerTbl[] =
 		{cmd_add, "add"},
 		{cmd_del, "delete"},
 		{cmd_shutdown, "shutdown"},
+		{cmd_reboot, "reboot"},
 		{cmd_quit, "quit"},		
 		{NULL,""}
 	};
@@ -94,7 +101,9 @@ Book *book_load_file(const char *path)
 
 	beyonwiz_xml = ezxml_parse_file(path);
 	timerlist_xml = ezxml_child(beyonwiz_xml, "TimerList");
- 
+	
+	//FIXME check to make sure we are reading a version 5 timerlist.
+	
 	if(timerlist_xml)
 	{
 		for(timer_xml = ezxml_child(timerlist_xml, "Timer"); timer_xml; timer_xml = timer_xml->next)
@@ -124,8 +133,7 @@ Book *book_load_file(const char *path)
 			timer->tsid = atoi(ezxml_attr(timer_xml, "tsId"));
 			timer->svcid = atoi(ezxml_attr(timer_xml, "svcId"));
 
-			printf("filename = %s\n", timer->filename);
-			printf("startMdj = %d\n", timer->startmjd);
+			printf("timer fname = %s, startMjd = %d, start = %d\n", timer->filename, timer->startmjd, timer->start);
 			timer++;
 		}
 
@@ -134,7 +142,7 @@ Book *book_load_file(const char *path)
 	return book;
 }
 
-void book_close(Book *book)
+void book_free(Book *book)
 {
 	int i;
 	Timer *timer;
@@ -153,27 +161,48 @@ void book_close(Book *book)
 	free(book);
 }
 
+//Split a line into substrings by converting ':' chars into '\0'
+//Return the number of arguments
+int line_split_args(char *line)
+{
+	int i, len, arg_count = 0;
+
+	len = strlen(line);
+	for(i=0;i<=len;i++)
+	{
+		if(line[i] == '\0')
+		{
+			arg_count++;
+		}
+
+		if(line[i] == ':')
+		{
+			arg_count++;
+			line[i] = '\0';
+		}
+	}
+
+	return arg_count;
+}
+
+//Read a timer line from the socket and create a Timer record.
 Timer *read_timer(int socket)
 {
 	Timer *timer;
 	char line[MAX_LINE];
-	int i,len;
+	int arg_count=0;
 	char *ptr;
 
 	if(read_line(socket, line) == 0)
 		return NULL;
 
+	arg_count = line_split_args(line);
+	if(arg_count != 11)
+		return NULL;
+
 	timer = (Timer *)malloc(sizeof(Timer));
 	if(timer == NULL)
 		return NULL;
-
-	len = strlen(line);
-	ptr = line;
-	for(i=0;i<len;i++)
-	{
-		if(line[i] == ':')
-			line[i] = '\0';
-	}
 
 	timer->filename = (char *)malloc(strlen(ptr) + 1);
 	if(timer->filename == NULL)
@@ -182,6 +211,8 @@ Timer *read_timer(int socket)
 		return NULL;
 	}
 
+	//Load arguments into Timer struct
+	ptr=line;
 	strcpy(timer->filename, ptr);
 
 	ptr += strlen(ptr)+1;
@@ -217,6 +248,53 @@ Timer *read_timer(int socket)
 	return timer;
 }
 
+Timer *read_info_timer(int socket)
+{
+	Timer *timer;
+	char line[MAX_LINE];
+	int arg_count;
+	char *ptr;
+
+	if(read_line(socket, line) == 0)
+		return NULL;
+
+	arg_count = line_split_args(line);
+	if(arg_count != 5)
+		return NULL;
+
+	timer = (Timer *)malloc(sizeof(Timer));
+	if(timer == NULL)
+		return NULL;
+
+	ptr = line;
+	timer->startmjd = ptr[0] == '\0' ? 0 : atoi(ptr);
+
+	ptr += strlen(ptr)+1;
+	timer->start = ptr[0] == '\0' ? 0 : atoi(ptr);
+
+	ptr += strlen(ptr)+1;
+	timer->onid = ptr[0] == '\0' ? 0 : atoi(ptr);
+
+	ptr += strlen(ptr)+1;
+	timer->tsid = ptr[0] == '\0' ? 0 : atoi(ptr);
+
+	ptr += strlen(ptr)+1;
+	timer->svcid = ptr[0] == '\0' ? 0 : atoi(ptr);
+
+	return timer;
+}
+
+//match two Timers on start date, time and channel
+int match_timers(Timer *t1, Timer *t2)
+{
+	if(t1->startmjd == t2->startmjd && t1->start == t2->start &&
+		t1->onid == t2->onid && t1->tsid == t2->tsid && t1->svcid == t2->svcid)
+		return 1;
+
+	return 0;
+}
+
+//Save the book.xml file to flash and reboot the machine.
 void reboot_wiz()
 {
 	socket_cleanup();
@@ -242,6 +320,8 @@ void cmd_list(int socket)
 		write(socket,line,strlen(line));
 	}
 
+	book_free(book);
+
 	return;
 }
 
@@ -256,7 +336,7 @@ void cmd_add(int socket)
 	new_timer = read_timer(socket);
 	if(new_timer == NULL)
 	{
-		book_close(book);
+		book_free(book);
 		return;
 	}
 
@@ -264,6 +344,9 @@ void cmd_add(int socket)
 
 	fwrite(book_xml_header, 1, sizeof(book_xml_header)-1,fp);
 	printf("%s", book_xml_header);
+
+	fwrite(book_xml_timerlist_start, 1, sizeof(book_xml_timerlist_start)-1,fp);
+	printf("%s", book_xml_timerlist_start);
 
 	for(i=0,timer=book->timers;i<book->n_timers;i++,timer++)
 	{
@@ -286,17 +369,78 @@ void cmd_add(int socket)
 	free(new_timer->filename);
 	free(new_timer);
 
+	fwrite(book_xml_timerlist_end, 1, sizeof(book_xml_timerlist_end)-1,fp);
+	printf("%s", book_xml_timerlist_end);
+		
 	fwrite(book_xml_footer, 1, sizeof(book_xml_footer)-1, fp);
 	printf("%s", book_xml_footer); 
 	fclose(fp);
 
-	reboot_wiz();
+	book_free(book);
 
 	return;
 }
 
 void cmd_del(int socket)
 {
+	char line[MAX_LINE];
+	Book *book = book_load_file(BOOK_PATH);
+	Timer *timer, *del_timer;
+	int i;
+	FILE *fp;
+
+	del_timer = read_info_timer(socket);
+	if(del_timer == NULL)
+	{
+		printf("Failed to read info timer\n");
+		book_free(book);
+		return;
+	}
+
+	fp = fopen(BOOK_PATH, "w");
+
+	fwrite(book_xml_header, 1, sizeof(book_xml_header)-1,fp);
+	printf("%s", book_xml_header);
+
+	timer=book->timers;
+
+	if(book->n_timers == 0 || (book->n_timers == 1 && match_timers(timer,del_timer)))
+	{
+			fwrite(book_xml_timerlist_empty, 1, sizeof(book_xml_timerlist_empty)-1,fp);
+			printf("%s", book_xml_timerlist_empty);
+	}
+	else
+	{
+		fwrite(book_xml_timerlist_start, 1, sizeof(book_xml_timerlist_start)-1,fp);
+		printf("%s", book_xml_timerlist_start);
+	
+		for(i=0;i<book->n_timers;i++,timer++)
+		{
+			//don't write the timer that we are deleting
+			if(match_timers(timer,del_timer))
+				continue;
+			
+			sprintf(line,"        <Timer fname=\"%s\" startMjd=\"%d\" nextMjd=\"%d\" start=\"%d\" duration=\"%d\" repeat=\"%d\" play=\"%d\" lock=\"%d\" onId=\"%d\" tsId=\"%d\" svcId=\"%d\" />\n",
+				timer->filename, timer->startmjd, timer->nextmjd, timer->start, timer->duration, 
+				timer->repeat, timer->play, timer->lock, timer->onid, timer->tsid, timer->svcid);
+			fwrite(line, 1, strlen(line),fp);
+
+			printf("%s",line);
+		}
+
+		fwrite(book_xml_timerlist_end, 1, sizeof(book_xml_timerlist_end)-1,fp);
+		printf("%s", book_xml_timerlist_end);
+	}
+	
+
+	fwrite(book_xml_footer, 1, sizeof(book_xml_footer)-1, fp);
+	printf("%s", book_xml_footer); 
+	fclose(fp);
+
+	free(del_timer);
+	
+	book_free(book);
+
 	return;
 }
 
@@ -311,13 +455,19 @@ void cmd_quit(int socket)
 	exit(0);
 }
 
+void cmd_reboot(int socket)
+{
+	reboot_wiz();
+}
+
 int read_line(int socket, char *data)
 {
 	int i;
 
 	for(i=0;i<MAX_LINE;i++)
 	{
-		read(socket, &data[i], 1);
+		if(read(socket, &data[i], 1) < 1)
+			return 0;
 		if(data[i] == '\n')
 		{
 			data[i] = '\0';
@@ -330,36 +480,37 @@ int read_line(int socket, char *data)
 	return 0;
 }
 
-void process_command(int socket)
+int process_command(int socket)
 {
 	char data[MAX_LINE];
 	const CmdHandler *cmd;
 
-	read_line(socket, data);
+	if(!read_line(socket, data))
+		return 0;
 
 	for(cmd = cmdHandlerTbl;cmd->handler != NULL;cmd++)
 	{
 		if(strcmp(cmd->cmd,data)==0)
 		{
-			printf("Command '%s' received.\n", cmd->cmd);
+			printf("Command '%s' received.\n\n", cmd->cmd);
 			cmd->handler(socket);
-			return;
+			return 1;
 		}
 	}
 
-	printf("Unknown command '%s' received!\n", data);
-	return;
+	printf("Unknown command '%s' received!\n\n", data);
+	return 0;
 }
 
-main()
+int main()
 {
-	Book *book;
+
 	int soc_len;
 	struct sockaddr_in serv_addr;
 	struct sockaddr_in cli_addr;
 
 	serv_addr.sin_family = AF_INET;
-	serv_addr.sin_port = htons( 30464 );
+	serv_addr.sin_port = htons( WIZREMOTE_PORT );
 	serv_addr.sin_addr.s_addr = htonl (INADDR_ANY);
 
 	soc = socket( AF_INET, SOCK_STREAM, IPPROTO_TCP );
@@ -368,14 +519,15 @@ main()
 
 	bind( soc, (struct sockaddr *)&serv_addr, sizeof(serv_addr) );
 	listen(soc, 1);
-
+	
+	printf("WizRemote starting on port %d\n", WIZREMOTE_PORT);
+	
 	soc_len = sizeof(cli_addr);
 	for(;;)
 	{
 		cli = accept(soc, (struct sockaddr *)&cli_addr, &soc_len );
-		process_command(cli);
-
-		write(cli,"ok\n", 3);
+		for(;process_command(cli);)
+			write(cli,"ok\n", 3);
 		close(cli);
 		cli = -1;
 	}

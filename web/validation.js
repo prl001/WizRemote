@@ -174,3 +174,11 @@ function check_timer()
 
 	return  true;
 }
+
+function confirm_delete(name)
+{
+	return confirm("Are you sure you want to delete the timer named\n '" + name + "'?");
+	//document.window.location = "?delete=" + data;
+	//return;
+}
+
