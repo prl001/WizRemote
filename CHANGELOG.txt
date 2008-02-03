@@ -1,3 +1,14 @@
+0.4 * Added AES encrypted handshake to connection. put a private
+      passphrase key into wizremote.key and $GLOBALS["aes_passphrase"]
+      in the webconfig. wizremote.key must be in the current directory
+      when running the wizremote daemon.
+    * Added user authenticartion to the website. Set the username
+      and password in the config section of wizremote.php
+    * Improved website display on the apple iphone.
+    * Added the ability to edit timers.
+    * Added sample rc.local script for starting the wizremote daemon
+      when the machine boots.
+
 0.3 * Fixed some memory leaks in wizremote
     * Added the ability to delete timers
     * Added the ability for the daemon to process mulitiple commands

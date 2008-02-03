@@ -1,0 +1,5 @@
+#!/bin/sh
+# put this file in /tmp/config then reboot with wizremote.php to have wizremote start on boot
+/bin/sleep 5
+(cd /tmp/mnt/idehdd/wizremote; ./wizremote > /dev/null &)
+

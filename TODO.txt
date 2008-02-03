@@ -1,10 +1,10 @@
 TODO List
 
-* Client/daemon authentication (AES handshake token)
-* Website user authentication
+* Client/daemon authentication (AES handshake token) (DONE)
+* Website user authentication (DONE)
 * Input checking for duplicate/overlapping timers.
 * Delete timer (DONE)
-* Edit timer
+* Edit timer (DONE)
 * Allow multiple timer edits before save/reboot. (DONE)
 * Display the current beyonwiz time on website.
 * Add more robust network handling.

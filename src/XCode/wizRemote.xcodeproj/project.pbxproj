@@ -25,6 +25,12 @@
 
 /* Begin PBXFileReference section */
 		07364AC80D4F549100B2087A /* validation.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; name = validation.js; path = ../../web/validation.js; sourceTree = SOURCE_ROOT; };
+		07364BA10D55523600B2087A /* aes.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = aes.c; path = ../aes.c; sourceTree = SOURCE_ROOT; };
+		07364BA50D55524000B2087A /* md5.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = md5.c; path = ../md5.c; sourceTree = SOURCE_ROOT; };
+		07364BA60D55524000B2087A /* md5.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = md5.h; path = ../md5.h; sourceTree = SOURCE_ROOT; };
+		07364C640D55E73900B2087A /* CHANGELOG.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = CHANGELOG.txt; path = ../../CHANGELOG.txt; sourceTree = SOURCE_ROOT; };
+		07364C670D55E74D00B2087A /* README.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = README.txt; path = ../../README.txt; sourceTree = SOURCE_ROOT; };
+		07364C6A0D55E75C00B2087A /* TODO.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = TODO.txt; path = ../../TODO.txt; sourceTree = SOURCE_ROOT; };
 		07B3A1FE0D4F2C1300D272D2 /* ezxml.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ezxml.c; path = ../ezxml.c; sourceTree = SOURCE_ROOT; };
 		07B3A1FF0D4F2C1300D272D2 /* ezxml.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ezxml.h; path = ../ezxml.h; sourceTree = SOURCE_ROOT; };
 		07B3A2030D4F2C2400D272D2 /* wizremote.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = wizremote.c; path = ../wizremote.c; sourceTree = SOURCE_ROOT; };
@@ -66,6 +72,9 @@
 		08FB7795FE84155DC02AAC07 /* Source */ = {
 			isa = PBXGroup;
 			children = (
+				07364BA50D55524000B2087A /* md5.c */,
+				07364BA60D55524000B2087A /* md5.h */,
+				07364BA10D55523600B2087A /* aes.c */,
 				07B3A2030D4F2C2400D272D2 /* wizremote.c */,
 				07B3A1FE0D4F2C1300D272D2 /* ezxml.c */,
 				07B3A1FF0D4F2C1300D272D2 /* ezxml.h */,
@@ -84,6 +93,9 @@
 		C6859E8C029090F304C91782 /* Documentation */ = {
 			isa = PBXGroup;
 			children = (
+				07364C6A0D55E75C00B2087A /* TODO.txt */,
+				07364C670D55E74D00B2087A /* README.txt */,
+				07364C640D55E73900B2087A /* CHANGELOG.txt */,
 			);
 			name = Documentation;
 			sourceTree = "<group>";

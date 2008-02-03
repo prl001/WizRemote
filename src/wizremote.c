@@ -12,7 +12,11 @@
 #include<netinet/in.h>
 #include "ezxml.h"
 
+#include "aes.c"
+#include "md5.c"
+
 #define debug(x) printf(x)
+#define TOKEN_SIZE 16 //128 bits
 #define MAX_LINE 512
 #define WIZREMOTE_PORT 30464
 #define BOOK_PATH "/tmp/config/book.xml"
@@ -23,6 +27,8 @@ const char book_xml_timerlist_empty[] = "    <TimerList version=\"5\" />\n";
 const char book_xml_timerlist_end[]   = "    </TimerList>\n";
 
 const char book_xml_footer[] = "</BeyonWiz>\n";
+
+const unsigned char token_xor_key[TOKEN_SIZE] = { 0xde, 0xad, 0xbe, 0xef, 0xca, 0xfe, 0xba, 0xbe, 0xae, 0x57, 0x05e, 0x29, 0xfd, 0x87, 0x10, 0xe6 };
 
 typedef struct {
 	char *filename;
@@ -65,7 +71,7 @@ const CmdHandler cmdHandlerTbl[] =
 		{cmd_del, "delete"},
 		{cmd_shutdown, "shutdown"},
 		{cmd_reboot, "reboot"},
-		{cmd_quit, "quit"},		
+		{cmd_quit, "quit"},
 		{NULL,""}
 	};
 
@@ -480,6 +486,84 @@ int read_line(int socket, char *data)
 	return 0;
 }
 
+int aes_load_key(unsigned char *key)
+{
+	FILE *fp;
+	char passphrase[80];
+	int i;
+	char chr;
+	struct cvs_MD5Context ctx;
+
+	fp = fopen("wizremote.key", "r");
+	if(fp == NULL)
+	{
+		return 0;
+	}
+
+	for(i=0;i<80;i++)
+	{
+		if(fread(&chr, 1, 1, fp) < 1)
+			break;
+
+		if(chr == '\r' || chr == '\n')
+			break;
+ 
+		passphrase[i] = chr;
+	}
+
+	fclose(fp);
+
+	cvs_MD5Init(&ctx);
+	cvs_MD5Update(&ctx, passphrase, i);
+	cvs_MD5Final(key, &ctx);
+
+	printf("AES key loaded. ");
+
+  for(i=0;i < 16;i++)
+		printf("%x", key[i]);
+
+	printf("\n");
+
+	return 1;
+}
+
+int aes_handshake(int socket, unsigned char *key)
+{
+	unsigned char expkey[4 * 4 * (10 + 1)];
+
+	unsigned char token[TOKEN_SIZE];
+	unsigned char enc[TOKEN_SIZE];
+	unsigned char response[TOKEN_SIZE];
+	int i;
+
+	ExpandKey(key,expkey);
+
+	for(i=0;i<TOKEN_SIZE;i++)
+	{
+		token[i] = rand()%255;
+	}
+
+	Encrypt(token, expkey, enc);
+
+	//send token
+	write(socket, enc, TOKEN_SIZE);
+
+	//read response
+	read(socket, enc, TOKEN_SIZE);
+
+	Decrypt(enc, expkey, response);
+
+	//check response
+	for(i=0;i<TOKEN_SIZE;i++)
+	{
+		if((response[i] ^ token_xor_key[i]) != token[i])
+		//if(response[i] != token[i])
+			return 0; 
+	}
+
+	return 1;
+}
+
 int process_command(int socket)
 {
 	char data[MAX_LINE];
@@ -508,6 +592,8 @@ int main()
 	int soc_len;
 	struct sockaddr_in serv_addr;
 	struct sockaddr_in cli_addr;
+	unsigned char aes_key[16]; //128 bit md5 hash of passphrase
+	int aes_flag = 0;
 
 	serv_addr.sin_family = AF_INET;
 	serv_addr.sin_port = htons( WIZREMOTE_PORT );
@@ -522,12 +608,19 @@ int main()
 	
 	printf("WizRemote starting on port %d\n", WIZREMOTE_PORT);
 	
+	aes_flag = aes_load_key(aes_key);
+
 	soc_len = sizeof(cli_addr);
 	for(;;)
 	{
 		cli = accept(soc, (struct sockaddr *)&cli_addr, &soc_len );
-		for(;process_command(cli);)
-			write(cli,"ok\n", 3);
+
+		if(aes_flag == 0 || aes_handshake(cli, aes_key) == 1)
+		{
+			for(;process_command(cli);)
+				write(cli,"ok\n", 3);
+		}
+
 		close(cli);
 		cli = -1;
 	}
