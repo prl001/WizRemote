@@ -1,3 +1,8 @@
+0.5 * Added HDD usage display.
+      eg "HDD Used 51.78%, Total 297.97GB, Free 143.67GB"
+    * Added  support for more characters types in the name field.
+      You can now use ', & and " chars along with others.
+ 
 0.4 * Added AES encrypted handshake to connection. put a private
       passphrase key into wizremote.key and $GLOBALS["aes_passphrase"]
       in the webconfig. wizremote.key must be in the current directory

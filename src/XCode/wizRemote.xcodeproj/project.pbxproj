@@ -164,6 +164,10 @@
 					"_GLIBCXX_DEBUG_PEDANTIC=1",
 				);
 				INSTALL_PATH = /usr/local/bin;
+				OTHER_CFLAGS = (
+					"-D",
+					__MACOSX__,
+				);
 				PRODUCT_NAME = wizRemote;
 				ZERO_LINK = YES;
 			};

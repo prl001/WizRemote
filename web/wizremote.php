@@ -49,6 +49,11 @@ function is_iphone()
  return $GLOBALS["is_iphone"];
 }
 
+function strip_magic_slashes($str)
+{
+ return get_magic_quotes_gpc() ? stripslashes($str) : $str;
+}
+
 function print_error()
 {
  if(isset($GLOBALS["error"]))
@@ -226,6 +231,24 @@ function render_flag($flag)
  return $flag ? "Y" : "N";
 }
 
+function render_hdd_usage($wiz)
+{
+ fwrite($wiz,"statfs\n");
+ $info = fgets($wiz);
+ list($bs,$total,$free) = split(",", $info);
+ if($total == 0)
+	return;
+
+ $used = round((($total - $free) / $total) * 100, 2);
+ $total_gb = round(($total * $bs) / (1024 * 1024 * 1024), 2);
+ $free_gb = round(($free * $bs) / (1024 * 1024 * 1024), 2);
+
+ echo "<p>HDD Used $used%, Total {$total_gb}GB, Free {$free_gb}GB";
+ 
+ 
+ return wiz_read_response($wiz);
+}
+
 function render_timers($wiz)
 {
  $page = $_SERVER['PHP_SELF'];
@@ -239,8 +262,9 @@ function render_timers($wiz)
 	echo "<th>Time</th><th>Len</th><th>Occur</th><th>Play</th><th>Lock</th><th>Ch</th><th>Action</th></tr>";
 	for($i=0;$i<$count;$i++)
 	{
+		$fname = trim(fgets($wiz));
 		$line = fgets($wiz);
-		list($fname,$startmjd,$nextmjd,$start,$duration,$repeat,$play,$lock,
+		list($startmjd,$nextmjd,$start,$duration,$repeat,$play,$lock,
 			$onid,$tsid,$svcid) = split(":",trim($line));
 		$startdate = decode_mjd($startmjd);
 		$nextdate = decode_mjd($nextmjd);
@@ -261,13 +285,13 @@ function render_timers($wiz)
 		if(isset($GLOBALS["channels"][$channel]))
 			$channel = $GLOBALS["channels"][$channel];
 
-		$edit_data = urlencode("$fname:$startmjd,$start,$duration,$repeat,$onid,$tsid,$svcid");
+		$edit_data = urlencode("$fname\n$startmjd,$nextmjd,$start,$duration,$repeat,$onid,$tsid,$svcid");
 
 		echo "<tr><td>$fname</td><td>".date("d-M-Y",$startdate)."</td><td>".date("d-M-Y",$nextdate)."</td>";
 		echo "<td>$starttime</td><td>$duration_str</td><td>".render_repeat($repeat)."</td><td>$play</td><td>$lock</td><td>$channel</td>";
 		echo "<td align=\"center\"><a href=\"$page?cmd=edit&data=$edit_data\"><img border=0 src=\"images/icon_edit_on.gif\"></a>";
 		echo "&nbsp;/&nbsp;";
-		echo "<a href=\"$page?cmd=delete&data=$startmjd,$start,$onid,$tsid,$svcid\" onClick=\"return confirm_delete('$fname')\"><img border=0 src=\"images/icon_delete_on.gif\"></a></td></tr>\n";
+		echo "<a href=\"$page?cmd=delete&data=$startmjd,$start,$onid,$tsid,$svcid\" onClick=\"return confirm_delete('".urlencode($fname)."')\"><img border=0 src=\"images/icon_delete_on.gif\"></a></td></tr>\n";
 	}
 	echo "</table>";
  }
@@ -404,15 +428,16 @@ function render_timer_input_form($type)
 
  if($type == "EDIT")
  {
-	list($fname, $data) = split(":", $_REQUEST["data"]);
-	list($startmjd, $start, $duration, $repeat, $onid, $tsid, $svcid) = split(",", $data);
+	list($fname, $data) = split("\n", $_REQUEST["data"]);
+	$fname = strip_magic_slashes($fname);
+	list($startmjd, $nextmjd, $start, $duration, $repeat, $onid, $tsid, $svcid) = split(",", $data);
 	$channel = "$onid,$tsid,$svcid";
 	$data = "$startmjd,$start,$channel";
  }
  else
  {
 	$fname = "";
-	$startmjd = "";
+	$nextmjd = "";
 	$start = "";
 	$duration = "";
 	$repeat = "0";
@@ -430,7 +455,7 @@ if($type == "EDIT")
 	<table bgcolor="#dfdfdf">
 		<tr><td align="right">Name:</td><td><input type="text" name="fname" id="fname" value="<?echo $fname;?>"size="35"></td></tr>
 		<tr><td align="right">Channel:</td><td><?php echo render_channel_dropdown($channel); ?></td></tr>
-		<tr><td align="right">Date:</td><td><?php echo render_start_field($startmjd); ?></td></tr>
+		<tr><td align="right">Date:</td><td><?php echo render_start_field($nextmjd); ?></td></tr>
 		<tr><td align="right">Time:</td><td><?php echo render_start_time($start); ?>&nbsp;eg ( 4:25pm or 16:25 )</td></tr>
 		<tr><td align="right">Duration:</td><td><?php echo render_duration($duration); ?>&nbsp;eg ( 70 or 1h10 )</td></tr>
 		<tr><td align="right">Occurrence:</td><td><?php echo render_occurrence($repeat); ?></td></tr>
@@ -485,9 +510,21 @@ function parse_duration($d)
  return $d;
 }
 
+function encode_filename($fname)
+{
+	$fname = trim(strip_magic_slashes($fname));
+	$fname = str_replace("&", "&amp;", $fname);
+	$fname = str_replace("<", "&lt;", $fname); 
+	$fname = str_replace(">", "&gt;", $fname); 
+	$fname = str_replace("'", "&apos;", $fname);  
+	$fname = str_replace("\"", "&quot;", $fname);
+
+	return $fname;
+}
+
 function add_timer($wiz)
 {
-	$fname = trim(str_replace(":", " ", $_REQUEST["fname"]));
+	$fname = encode_filename($_REQUEST["fname"]);
 
 	$startdate = gmmktime(0,0,0,$_REQUEST["startMonth"],$_REQUEST["startDay"],$_REQUEST["startYear"]);
 
@@ -510,7 +547,7 @@ function add_timer($wiz)
  
 	$channel = str_replace(",", ":", $channel);
 
-	$addstr = "add\n$fname:$startmjd:$nextmjd:$start:$duration:$occurrence:0:0:$channel\n";
+	$addstr = "add\n$fname\n$startmjd:$nextmjd:$start:$duration:$occurrence:0:0:$channel\n";
 	//echo "<pre>$addstr</pre>";
 	fwrite($wiz, $addstr);
 
@@ -627,6 +664,7 @@ Created by: <b>Eric Fry</b>
 <h3>Current Timers</h3>
 <?php
 render_timers($wiz);
+render_hdd_usage($wiz);
 render_timer_input_form($input_type);
 ?>
 <br>

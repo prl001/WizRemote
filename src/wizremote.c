@@ -9,6 +9,13 @@
 #include<signal.h>
 #include<sys/types.h>
 #include<sys/socket.h>
+#ifndef __MACOSX__
+#include<sys/statfs.h>
+#else
+#include<sys/param.h>
+#include<sys/mount.h>
+#endif
+
 #include<netinet/in.h>
 #include "ezxml.h"
 
@@ -20,6 +27,7 @@
 #define MAX_LINE 512
 #define WIZREMOTE_PORT 30464
 #define BOOK_PATH "/tmp/config/book.xml"
+#define HDD_PATH "/tmp/mnt/idehdd"
 
 const char book_xml_header[] = "<?xml version=\"1.0\" encoding=\"iso-8859-1\" standalone=\"yes\" ?>\n<BeyonWiz>\n    <!-- Timer list for BeyonWiz -->\n";
 const char book_xml_timerlist_start[] = "    <TimerList version=\"5\">\n";
@@ -52,6 +60,7 @@ typedef struct {
 int soc = -1;
 int cli = -1;
 
+void cmd_statfs(int socket);
 void cmd_list(int socket);
 void cmd_add(int socket);
 void cmd_del(int socket);
@@ -66,6 +75,7 @@ typedef struct {
 
 const CmdHandler cmdHandlerTbl[] = 
 	{
+		{cmd_statfs,"statfs"},
 		{cmd_list,"list"},
 		{cmd_add, "add"},
 		{cmd_del, "delete"},
@@ -202,26 +212,33 @@ Timer *read_timer(int socket)
 	if(read_line(socket, line) == 0)
 		return NULL;
 
-	arg_count = line_split_args(line);
-	if(arg_count != 11)
-		return NULL;
-
 	timer = (Timer *)malloc(sizeof(Timer));
 	if(timer == NULL)
 		return NULL;
 
-	timer->filename = (char *)malloc(strlen(ptr) + 1);
+	timer->filename = (char *)malloc(strlen(line) + 1);
 	if(timer->filename == NULL)
 	{
 		free(timer);
 		return NULL;
 	}
+	
+	strcpy(timer->filename, line);
+	
+	if(read_line(socket, line) == 0)
+	{
+		free(timer->filename);
+		free(timer);
+		return NULL;
+	}
+	
+	arg_count = line_split_args(line);
+	if(arg_count != 10)
+		return NULL;
+
 
 	//Load arguments into Timer struct
 	ptr=line;
-	strcpy(timer->filename, ptr);
-
-	ptr += strlen(ptr)+1;
 	timer->startmjd = ptr[0] == '\0' ? 0 : atoi(ptr);
 
 	ptr += strlen(ptr)+1;
@@ -308,6 +325,26 @@ void reboot_wiz()
 	exit(0);
 }
 
+void cmd_statfs(int socket)
+{
+	char line[80];
+	
+	struct statfs s;
+	
+	if(statfs(HDD_PATH, &s) == 0)
+	{
+		sprintf(line, "%d,%d,%d\n", s.f_bsize, s.f_blocks, s.f_bavail);
+	}
+	else
+	{
+		strcpy(line, "0,0,0\n");	
+	}
+
+	write(socket,line,strlen(line));
+	
+	return;
+}
+
 void cmd_list(int socket)
 {
 	char line[MAX_LINE];
@@ -320,7 +357,7 @@ void cmd_list(int socket)
 
 	for(i=0,timer=book->timers;i<book->n_timers;i++,timer++)
 	{
-		sprintf(line,"%s:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d\n",
+		sprintf(line,"%s\n%d:%d:%d:%d:%d:%d:%d:%d:%d:%d\n",
 			timer->filename, timer->startmjd, timer->nextmjd, timer->start, timer->duration, 
 			timer->repeat, timer->play, timer->lock, timer->onid, timer->tsid, timer->svcid);
 		write(socket,line,strlen(line));

@@ -3,6 +3,14 @@ function trim(str)
 	return str.replace(/^\s\s*/, '').replace(/\s\s*$/, '');
 }
 
+function urldecode(str)
+{
+	str = str.replace(/\+/g, ' ');
+	str = unescape(str);
+
+	return str;
+}
+
 function get_form_element(form_id)
 {
  var item = document.getElementById(form_id);
@@ -121,7 +129,7 @@ function name_validate(strName)
 		alert("Please enter a name!");
 		return false;
 	}
-
+/*
 	var regexp = /^[0-9,a-z,_\- ]+$/i;
 	
 	if(regexp.test(strName) == false)
@@ -129,7 +137,7 @@ function name_validate(strName)
 		alert("Invalid Name!");
 		return false;
 	}
-
+*/
 	return true;
 }
 
@@ -177,7 +185,7 @@ function check_timer()
 
 function confirm_delete(name)
 {
-	return confirm("Are you sure you want to delete the timer named\n '" + name + "'?");
+	return confirm("Are you sure you want to delete the timer named\n '" + urldecode(name) + "'?");
 	//document.window.location = "?delete=" + data;
 	//return;
 }
