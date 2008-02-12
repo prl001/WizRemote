@@ -205,7 +205,7 @@ function render_header($meta)
 	echo "\t\t<meta name=\"viewport\" content=\"width = 320\" />\n";
  echo "\t\t$meta\n";
 ?>
-		<script language="javascript" src="validation.js" />
+		<script type="text/javascript" src="validation.js"></script> 
 	</head>
 <body>
 <?php
