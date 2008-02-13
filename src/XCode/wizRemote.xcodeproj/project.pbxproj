@@ -31,6 +31,10 @@
 		07364C640D55E73900B2087A /* CHANGELOG.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = CHANGELOG.txt; path = ../../CHANGELOG.txt; sourceTree = SOURCE_ROOT; };
 		07364C670D55E74D00B2087A /* README.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = README.txt; path = ../../README.txt; sourceTree = SOURCE_ROOT; };
 		07364C6A0D55E75C00B2087A /* TODO.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = TODO.txt; path = ../../TODO.txt; sourceTree = SOURCE_ROOT; };
+		0758D6200D6275A700187ED9 /* update_channels.php */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.php; name = update_channels.php; path = ../../web/update_channels.php; sourceTree = SOURCE_ROOT; };
+		0758D6230D62766000187ED9 /* wizremote_inc.php */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.php; name = wizremote_inc.php; path = ../../web/wizremote_inc.php; sourceTree = SOURCE_ROOT; };
+		0758D6270D627AEA00187ED9 /* config_inc.php */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.php; name = config_inc.php; path = ../../web/config_inc.php; sourceTree = SOURCE_ROOT; };
+		0758D65D0D627CD200187ED9 /* config_channels_inc.php */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.php; name = config_channels_inc.php; path = ../../web/config_channels_inc.php; sourceTree = SOURCE_ROOT; };
 		07B3A1FE0D4F2C1300D272D2 /* ezxml.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ezxml.c; path = ../ezxml.c; sourceTree = SOURCE_ROOT; };
 		07B3A1FF0D4F2C1300D272D2 /* ezxml.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ezxml.h; path = ../ezxml.h; sourceTree = SOURCE_ROOT; };
 		07B3A2030D4F2C2400D272D2 /* wizremote.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = wizremote.c; path = ../wizremote.c; sourceTree = SOURCE_ROOT; };
@@ -52,6 +56,10 @@
 		07B3A2140D4F2D1600D272D2 /* Web */ = {
 			isa = PBXGroup;
 			children = (
+				0758D65D0D627CD200187ED9 /* config_channels_inc.php */,
+				0758D6270D627AEA00187ED9 /* config_inc.php */,
+				0758D6230D62766000187ED9 /* wizremote_inc.php */,
+				0758D6200D6275A700187ED9 /* update_channels.php */,
 				07364AC80D4F549100B2087A /* validation.js */,
 				07B3A2170D4F2D2D00D272D2 /* wizremote.php */,
 			);
@@ -167,6 +175,8 @@
 				OTHER_CFLAGS = (
 					"-D",
 					__MACOSX__,
+					"-D",
+					BIG_ENDIAN,
 				);
 				PRODUCT_NAME = wizRemote;
 				ZERO_LINK = YES;

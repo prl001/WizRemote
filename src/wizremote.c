@@ -22,12 +22,17 @@
 #include "aes.c"
 #include "md5.c"
 
+#define u8 unsigned char
+#define u16 unsigned short int
+#define u32 unsigned int
+
 #define debug(x) printf(x)
 #define TOKEN_SIZE 16 //128 bits
 #define MAX_LINE 512
 #define WIZREMOTE_PORT 30464
 #define BOOK_PATH "/tmp/config/book.xml"
 #define HDD_PATH "/tmp/mnt/idehdd"
+#define SVC_PATH "/tmp/config/svc.dat"
 
 const char book_xml_header[] = "<?xml version=\"1.0\" encoding=\"iso-8859-1\" standalone=\"yes\" ?>\n<BeyonWiz>\n    <!-- Timer list for BeyonWiz -->\n";
 const char book_xml_timerlist_start[] = "    <TimerList version=\"5\">\n";
@@ -57,10 +62,17 @@ typedef struct {
 	Timer *timers;
 } Book;
 
+typedef struct {
+	//u32 rf;
+	u16 onid;
+	u16 tsid;
+} RFInfo;
+
 int soc = -1;
 int cli = -1;
 
 void cmd_statfs(int socket);
+void cmd_chlist(int socket);
 void cmd_list(int socket);
 void cmd_add(int socket);
 void cmd_del(int socket);
@@ -76,6 +88,7 @@ typedef struct {
 const CmdHandler cmdHandlerTbl[] = 
 	{
 		{cmd_statfs,"statfs"},
+		{cmd_chlist,"chlist"},
 		{cmd_list,"list"},
 		{cmd_add, "add"},
 		{cmd_del, "delete"},
@@ -84,6 +97,44 @@ const CmdHandler cmdHandlerTbl[] =
 		{cmd_quit, "quit"},
 		{NULL,""}
 	};
+
+u16 read_u16(FILE *fp)
+{
+	u16 i;
+
+#ifdef BIG_ENDIAN
+	unsigned char c;
+	fread(&c, 1, 1, fp);
+	i = c;
+	fread(&c, 1, 1, fp);
+	i += (c << 8);
+#else
+	fread(&i, sizeof(u16), 1, fp);
+#endif
+
+	return i;
+}
+
+u32 read_u32(FILE *fp)
+{
+	u32 i;
+
+#ifdef BIG_ENDIAN
+	unsigned char c;
+	fread(&c, 1, 1, fp);
+	i = c;
+	fread(&c, 1, 1, fp);
+	i += (c << 8);
+	fread(&c, 1, 1, fp);
+	i += (c << 16);
+	fread(&c, 1, 1, fp);
+	i += (c << 24);
+#else
+	fread(&i, sizeof(u32), 1, fp);
+#endif
+
+	return i;
+}
 
 
 void socket_cleanup()
@@ -342,6 +393,97 @@ void cmd_statfs(int socket)
 
 	write(socket,line,strlen(line));
 	
+	return;
+}
+
+void cmd_chlist(int socket)
+{
+	char line[80];
+	FILE *fp;
+	int n,i,svc_name_len, rf_name_len;
+	unsigned char *names;
+	u16 svcid;
+	u16 name_offset;
+	u16 rf_offset;
+	u32 svc_offset;
+	RFInfo *rf, *rf_ptr;
+	u16 rf_count;
+	
+	fp = fopen(SVC_PATH, "r");
+	if(fp == NULL)
+		return;
+
+	fseek(fp, 0x30, SEEK_SET);
+	//read number of channels
+	n = read_u32(fp);
+	fseek(fp, 0x2, SEEK_CUR);
+	svc_name_len = read_u32(fp);
+	rf_name_len = read_u32(fp);
+
+	names = (unsigned char *)malloc(svc_name_len);
+	
+	fseek(fp, 0x3e, SEEK_SET);
+	
+	//read in name data
+	fread(names,svc_name_len, 1, fp);
+	
+	//move to start of svcid segment
+	fseek(fp, rf_name_len + 0x58, SEEK_CUR);
+	
+	//save the offset for later
+	svc_offset = ftell(fp);
+	
+	//skip the svcid segment
+	fseek(fp, 0x24 * n, SEEK_CUR);
+
+	fseek(fp, 0x6, SEEK_CUR); //move to rf_count
+	rf_count = read_u16(fp);
+	
+	rf = malloc(sizeof(RFInfo) * rf_count);
+	
+	rf_ptr = rf;
+	
+	//move to first rf entry
+	fseek(fp, 0x20, SEEK_CUR);
+	
+	for(i=0;i < rf_count && !feof(fp);i++)
+	{
+		fseek(fp, 0x8, SEEK_CUR); //skip rf data + Mhz
+		rf_ptr->onid = read_u16(fp);
+		rf_ptr->tsid = read_u16(fp);
+		
+		rf_ptr++;
+	}
+
+	fseek(fp, svc_offset, SEEK_SET);
+	
+	//send the number of channels
+	sprintf(line, "%d\n", n);
+	printf("%s",line);
+	write(socket,line,strlen(line));
+	
+	for(i=0;i<n;i++)
+	{
+		fseek(fp, 0x4, SEEK_CUR);
+		rf_offset = read_u16(fp); //rf offset
+		fseek(fp, 0x2, SEEK_CUR); //skip unknown
+		svcid = read_u16(fp); //svcid
+		fseek(fp, 0xa, SEEK_CUR); //skip to name offset data
+		
+		name_offset = read_u16(fp);
+		
+		sprintf(line, "%d,%d,%d:%s\n",rf[rf_offset].onid, rf[rf_offset].tsid, svcid, &names[name_offset]);
+		printf("%s",line);
+		write(socket,line,strlen(line));
+		
+		fseek(fp, 0xe, SEEK_CUR); //skip to end of this record.
+
+	}
+
+	free(rf);
+	free(names);
+	fclose(fp);
+
 	return;
 }
 

@@ -1,8 +1,20 @@
+0.6 * Added update_channels.php This script fetches the channel
+      list array from the wiz. If config_channels_inc.php is
+      writeable by your webserver it will be updated for you.
+      If not then you will need to save the resulting the channel
+      list file and copy it to your web directory manually.
+    * Moved web config into config_inc.php
+    * Moved channel array to config_channels_inc.php
+    * Moved come common php functions into wizremote_inc.php
+	* Added new chlist message to wizremote daemon. Thanks
+      to tonymy01 for info on the svc.dat file
+
 0.5 * Added HDD usage display.
       eg "HDD Used 51.78%, Total 297.97GB, Free 143.67GB"
     * Added  support for more characters types in the name field.
       You can now use ', & and " chars along with others.
     * Use the next start date when editing an existing timer.
+    * Added tonymy01's fix for IE javascript.
  
 0.4 * Added AES encrypted handshake to connection. put a private
       passphrase key into wizremote.key and $GLOBALS["aes_passphrase"]

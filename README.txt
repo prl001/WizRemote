@@ -1,4 +1,4 @@
-WizRemote v0.5 - remotely set timers on your Beyonwiz
+WizRemote v0.6 - remotely set timers on your Beyonwiz
 Copyright 2008 Eric Fry
 License: GPLv2 
 efry@users.sourceforge.net
@@ -10,8 +10,7 @@ the wiz!
 
 This is alpha software please use at your own risk!
 
-I'd be interested in any feedback you can give. I still need to find out
-how to work out the channel data automatically.
+I'd be interested in any feedback you can give.
 
 --How it works--
 
@@ -27,15 +26,11 @@ To run this you will need telnet access to your wiz.
 
 Steps.
 
-1. copy wizremote and reboot.sh to /tmp/mnt/idehdd/ on your wiz
-2. run ./wizremote from the /tmp/mnt/idehdd dir 
-3. setup and configure wizremote.php on your webserver. (You will need to
-   set some timers on the wiz to gather the channel data needed for the
-   config) I haven't worked out how the tsid,onid and svcid numbers are
-   generated yet. :(
-
-4. surf to wizremote.php then adjust the config with the channel numbers
-   from your pre-existing timers.
+1. copy wizremote, wizremote.key and reboot.sh to /tmp/mnt/idehdd/wizremote/ on your wiz
+2. run ./wizremote from the /tmp/mnt/idehdd/wizremote dir 
+3. setup and configure wizremote.php on your webserver. You will need to export your
+   channel list from the wiz. This can be done by running the update_channels.php script
+   on the website.
 
 --Warning--
 
