@@ -1,5 +1,8 @@
 <?php //Generated 13-Feb-2008 16:04:56
 
+//Warning! please use update_channels.php to gather YOUR channel data.
+//These are the values from my service list. (Sydney)
+
 $GLOBALS["channels"] = array(
 "4115,1282,1312" => "7 Digital",
 "4115,1282,1313" => "7 Digital 1",
