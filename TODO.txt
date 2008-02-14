@@ -9,6 +9,7 @@ TODO List
 * Display the current beyonwiz time on website.
 * Add more robust network handling.
 * General code cleanup. More error handling.
+* Add jsCalendar to timer input form.
 
 If you have any other suggestions please let me know. :)
 efry@users.sourceforge.net

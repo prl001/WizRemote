@@ -1,4 +1,4 @@
-WizRemote v0.6 - remotely set timers on your Beyonwiz
+WizRemote v0.6a - remotely set timers on your Beyonwiz
 Copyright 2008 Eric Fry
 License: GPLv2 
 efry@users.sourceforge.net
@@ -39,4 +39,6 @@ timers or dodgy input data. Please be careful when using it. I also have the
 time shift buffer turned off as I don't clean this up when I reboot the
 machine.
 
+The files reboot.sh and rc.local must be in unix text format!
 
+	

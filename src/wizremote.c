@@ -415,8 +415,8 @@ void cmd_chlist(int socket)
 
 	fseek(fp, 0x30, SEEK_SET);
 	//read number of channels
-	n = read_u32(fp);
-	fseek(fp, 0x2, SEEK_CUR);
+	n = read_u16(fp);
+	fseek(fp, 0x4, SEEK_CUR);
 	svc_name_len = read_u32(fp);
 	rf_name_len = read_u32(fp);
 

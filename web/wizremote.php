@@ -448,11 +448,14 @@ if(isset($_REQUEST["cmd"]))
 //FIXME we need more validation on input data.
 if($_SERVER["REQUEST_METHOD"] == "POST")
 {
-	switch($_REQUEST["type"])
+	if(isset($_REQUEST["type"]))
 	{
-		case "ADD" : add_timer($wiz); break;
-		case "EDIT" : edit_timer($wiz); break;
-		default : break;
+		switch($_REQUEST["type"])
+		{
+			case "ADD" : add_timer($wiz); break;
+			case "EDIT" : edit_timer($wiz); break;
+			default : break;
+		}
 	}
 }
 

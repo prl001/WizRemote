@@ -1,3 +1,7 @@
+0.6a* Fixed bug in chlist command. I was reading the number of 
+      channels as u32 when it should have been u16
+    * Fixed php warning about undefined $_REQUEST["type"] var.
+
 0.6 * Added update_channels.php This script fetches the channel
       list array from the wiz. If config_channels_inc.php is
       writeable by your webserver it will be updated for you.
@@ -6,7 +10,7 @@
     * Moved web config into config_inc.php
     * Moved channel array to config_channels_inc.php
     * Moved come common php functions into wizremote_inc.php
-	* Added new chlist message to wizremote daemon. Thanks
+    * Added new chlist message to wizremote daemon. Thanks
       to tonymy01 for info on the svc.dat file
 
 0.5 * Added HDD usage display.
