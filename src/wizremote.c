@@ -7,13 +7,17 @@
 #include<stdlib.h>
 #include<unistd.h>
 #include<signal.h>
+#include<poll.h>
+#include<fcntl.h>
 #include<sys/types.h>
+#include<sys/uio.h>
+#include<sys/errno.h>
 #include<sys/socket.h>
-#ifndef __MACOSX__
-#include<sys/statfs.h>
-#else
+#ifdef HAS_SYS_MOUNT_H
 #include<sys/param.h>
 #include<sys/mount.h>
+#else //ucLinux
+#include<sys/statfs.h>
 #endif
 
 #include<netinet/in.h>
@@ -21,6 +25,8 @@
 
 #include "aes.c"
 #include "md5.c"
+
+extern int errno;
 
 #define u8 unsigned char
 #define u16 unsigned short int
@@ -647,12 +653,36 @@ void cmd_reboot(int socket)
 
 int read_line(int socket, char *data)
 {
-	int i;
+	int i, nfds, ret;
+	struct pollfd pfd[1];
 
-	for(i=0;i<MAX_LINE;i++)
+	pfd[0].fd = socket;
+	pfd[0].events = POLLIN;
+
+	for(i=0;i<MAX_LINE;)
 	{
-		if(read(socket, &data[i], 1) < 1)
-			return 0;
+		ret = read(socket, &data[i], 1);
+		if(ret < 1)
+		{
+			if(ret == -1 && errno == EAGAIN) //we've run out of data, poll again.
+			{
+				nfds = poll(pfd, 1, 20 * 1000);
+				if(nfds == 0)
+				{
+					printf("read_line(): Socket timeout!\n");
+					return 0;
+				}
+				if(nfds == -1)
+				{
+					printf("read_line(): poll error!\n");
+					return 0;
+				}
+
+				continue;
+			}
+			else //ret = 0 socket closed ret = -1 && !EAGAIN read error
+				return 0;
+		}
 		if(data[i] == '\n')
 		{
 			data[i] = '\0';
@@ -660,9 +690,49 @@ int read_line(int socket, char *data)
 				data[i-1] = '\0';
 			return 1;
 		}
+		//printf("data[%d] = %c\n",i,data[i]);
+		i++;
 	}
 
 	return 0;
+}
+
+int read_nbytes(int socket, unsigned char *data, int nbytes)
+{
+	int i, nfds, bytes_read;
+	struct pollfd pfd[1];
+
+	pfd[0].fd = socket;
+	pfd[0].events = POLLIN;
+
+	for(i=0;i<nbytes;)
+	{
+		bytes_read = read(socket, &data[i], nbytes - i);
+
+		if(bytes_read < 1)
+		{
+			if(bytes_read == -1 && errno == EAGAIN) //we've run out of data, poll again.
+			{
+				nfds = poll(pfd, 1, 20 * 1000);
+				if(nfds == 0)
+				{
+					printf("read_nbytes(): Socket timeout!\n");
+					return 0;
+				}
+				if(nfds == -1)
+				{
+					printf("read_nbytes(): poll error!\n");
+					return 0;
+				}
+				
+				continue;
+			}
+			return 0;
+		}
+		i += bytes_read;
+	}
+
+	return 1;
 }
 
 int aes_load_key(unsigned char *key)
@@ -728,7 +798,8 @@ int aes_handshake(int socket, unsigned char *key)
 	write(socket, enc, TOKEN_SIZE);
 
 	//read response
-	read(socket, enc, TOKEN_SIZE);
+	if(read_nbytes(socket, enc, TOKEN_SIZE) == 0)
+		return 0;
 
 	Decrypt(enc, expkey, response);
 
@@ -736,7 +807,6 @@ int aes_handshake(int socket, unsigned char *key)
 	for(i=0;i<TOKEN_SIZE;i++)
 	{
 		if((response[i] ^ token_xor_key[i]) != token[i])
-		//if(response[i] != token[i])
 			return 0; 
 	}
 
@@ -793,6 +863,8 @@ int main()
 	for(;;)
 	{
 		cli = accept(soc, (struct sockaddr *)&cli_addr, &soc_len );
+
+		fcntl(cli, F_SETFL, O_NONBLOCK); //set socket non-blocking
 
 		if(aes_flag == 0 || aes_handshake(cli, aes_key) == 1)
 		{

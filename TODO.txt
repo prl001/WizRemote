@@ -7,7 +7,7 @@ TODO List
 * Edit timer (DONE)
 * Allow multiple timer edits before save/reboot. (DONE)
 * Display the current beyonwiz time on website.
-* Add more robust network handling.
+* Add more robust network handling. (DONE)
 * General code cleanup. More error handling.
 * Add jsCalendar to timer input form.
 

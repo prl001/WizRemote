@@ -1,4 +1,4 @@
-WizRemote v0.6a - remotely set timers on your Beyonwiz
+WizRemote v0.7 - remotely set timers on your Beyonwiz
 Copyright 2008 Eric Fry
 License: GPLv2 
 efry@users.sourceforge.net

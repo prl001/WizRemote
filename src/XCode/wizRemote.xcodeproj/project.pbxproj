@@ -174,7 +174,7 @@
 				INSTALL_PATH = /usr/local/bin;
 				OTHER_CFLAGS = (
 					"-D",
-					__MACOSX__,
+					HAS_SYS_MOUNT_H,
 					"-D",
 					BIG_ENDIAN,
 				);

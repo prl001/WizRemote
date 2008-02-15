@@ -1,3 +1,10 @@
+0.7 * Added timeouts to read operations on the daemon.
+      The daemon will disconnect the client if it doesn't
+      receive its data within the timeout period.
+    * Added read_bytes() to daemon
+    * Changed read_line() to poll for data.
+    * Set daemon socket to non-blocking
+
 0.6a* Fixed bug in chlist command. I was reading the number of 
       channels as u32 when it should have been u16
     * Fixed php warning about undefined $_REQUEST["type"] var.
