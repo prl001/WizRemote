@@ -97,7 +97,7 @@ function render_timers($wiz)
 
 		$edit_data = urlencode("$fname\n$startmjd,$nextmjd,$start,$duration,$repeat,$onid,$tsid,$svcid");
 
-		echo "<tr><td>$fname</td><td>".date("d-M-Y",$startdate)."</td><td>".date("d-M-Y",$nextdate)."</td>";
+		echo "<tr><td>$fname</td><td>".gmdate("d-M-Y",$startdate)."</td><td>".gmdate("d-M-Y",$nextdate)."</td>";
 		echo "<td>$starttime</td><td>$duration_str</td><td>".render_repeat($repeat)."</td><td>$play</td><td>$lock</td><td>$channel</td>";
 		echo "<td align=\"center\"><a href=\"$page?cmd=edit&data=$edit_data\"><img border=0 src=\"images/icon_edit_on.gif\"></a>";
 		echo "&nbsp;/&nbsp;";
